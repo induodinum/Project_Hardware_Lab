@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script src="https://cdn.netpie.io/microgear.js"></script>
+<script>
+  const APPID = "weight";
+  const KEY = "uVBDI2JokrRZqXn";
+  const SECRET = "z8I3tA8nFNvrEfQwzqJCFA3HZ";
+
+  const ALIAS = "HTML_web";
+  const thing1 = "NodeMCU1";
+
+  var microgear = Microgear.create({
+    key: KEY,
+    secret: SECRET,
+    alias : ALIAS
+  });
+
+  microgear.on('message',function(topic,msg) {
+    document.getElementById("raw_data").innerHTML = "Data = " + msg;
+    console.log(msg);  // for debug
+  });
+
+  microgear.on('connected', function() {
+    microgear.setAlias(ALIAS);
+    document.getElementById("connected_NETPIE").innerHTML = "Connected to NETPIE"
+  });
+
+  microgear.on('present', function(event) {
+    console.log(event);
+  });
+
+  microgear.on('absent', function(event) {
+    console.log(event);
+  });
+
+  microgear.resettoken(function(err) {
+    microgear.connect(APPID);
+  });
+</script>
+
+<h1 id="connected_NETPIE"></h1>
+<p id="raw_data"></p>
+<p id="get_topic"></p>
+
+</body>
+</html>
