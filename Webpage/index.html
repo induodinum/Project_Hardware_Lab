@@ -1,0 +1,218 @@
+<head>
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<style>
+.remaining {
+  height: 450px;
+}
+
+.remain-h {
+  font: 50px sans-serif;
+  background-color: steelblue;
+  text-align: center;
+  padding: 3px;
+  margin: 1px;
+  color: white;
+  width: 1450px;
+}
+
+.bottle-head {
+  position: absolute;
+  background-color: #CCCC66;
+  height: 50px;
+  width: 80px;
+  top: 100px;
+  left: 460px;
+}
+
+.bottle {
+  position: absolute;
+  background-color: #FFFFCC;
+  height: 310px;
+  width: 200px;
+  top: 145px;
+  left: 400px;
+}
+
+#pill {
+  position: absolute;
+  background-color: #FF9999;
+  width: 190px;
+  left: 405px;
+}
+
+#remain-perc {
+  position: absolute;
+  font: 150px sans-serif;
+  color: #6699FF;
+  top: 200px;
+  left: 780px;
+}
+
+#number-pill {
+  position: relative;
+  top: 0;
+  left: 20px;
+  width: 700px;
+  height: 500px;
+}
+
+#myDiv {
+  position: relative;
+  top: -500px;
+  left: 750px;
+  width: 700px;
+  height: 500px;
+}
+
+.container{
+  margin: 0 auto;
+  text-align: center;
+}
+</style>
+
+<body>
+  <div class="remaining">
+      <h1 class="remain-h">Smart Pill Bottle</h1>
+      <div class="remain-div">
+          <div class="bottle-head"></div>
+          <div class="bottle"></div>
+          <div id="pill"></div>
+          <div id="remain-perc"></div>
+      </div>
+  </div>
+  <div class="container">
+    <div id="number-pill"></div>
+    <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+  </div>
+  <h1 id="connected_NETPIE"></h1>
+  <p id="raw_data"></p>
+  <p id="get_topic"></p>
+
+  <script src="https://cdn.netpie.io/microgear.js"></script>
+  <script>
+    var datelist = ['2017-12-21 06:01:00', '2017-12-21 06:02:00', '2017-12-21 06:05:00', '2017-12-21 06:08:00'];
+    var numlist = ['30', '29', '27', '26'];
+    var oldweight = 0;
+    const deltaweight = 2.2;
+
+    const APPID = "weight";
+    const KEY = "uVBDI2JokrRZqXn";
+    const SECRET = "z8I3tA8nFNvrEfQwzqJCFA3HZ";
+
+    const ALIAS = "HTML_web";
+    const thing1 = "NodeMCU1";
+
+    var microgear = Microgear.create({
+      key: KEY,
+      secret: SECRET,
+      alias : ALIAS
+    });
+
+    microgear.on('message',function(topic,msg) {
+      document.getElementById("raw_data").innerHTML = "Data = " + msg;
+      var newweight = parseInt(msg);
+      if(newweight - oldweight > deltaweight || oldweight - newweight > deltaweight){
+        changeWeight(msg);
+      }
+    });
+
+    microgear.on('connected', function() {
+      microgear.setAlias(ALIAS);
+      document.getElementById("connected_NETPIE").innerHTML = "Connected to NETPIE"
+    });
+
+    microgear.on('present', function(event) {
+      console.log(event);
+    });
+
+    microgear.on('absent', function(event) {
+      console.log(event);
+    });
+
+    microgear.resettoken(function(err) {
+      microgear.connect(APPID);
+    });
+
+    function changeWeight(msg) {
+        console.log("changeWeight " + msg);
+
+        var dt = new Date();
+        var timenow = dt.toISOString();
+        console.log(timenow);
+        datelist.push(timenow);
+
+        const maxweight = 122;
+        const weightperpill = 3;
+        var perc = Math.floor(parseInt(msg)*100/maxweight);
+        var h = perc*3;
+        var t = 450-h;
+        var num = Math.floor(msg/weightperpill);
+        numlist.push(num);
+        document.getElementById("pill").style.height = h+"px";
+        document.getElementById("pill").style.top = t+"px";
+        document.getElementById("remain-perc").innerHTML = perc + "%";
+
+        if(perc <= 20){
+          document.getElementById("pill").style.backgroundColor = "#FF9999";
+          document.getElementById("remain-perc").style.color = "#FF9999";
+        } else {
+          document.getElementById("pill").style.backgroundColor = "#CCEEAD";
+          document.getElementById("remain-perc").style.color = "#CCEEAD";
+        }
+
+        updateGraph();
+    }
+
+    function updateGraph(){
+        var numpill = [
+          {
+            x: datelist,
+            y: numlist,
+            type: 'scatter'
+          }
+        ];
+
+        var layoutnum = {
+          title: 'Number of Pill',
+          xaxis: {
+            range: ['2017-12-21 06:00:00', '2017-12-21 06:40:00'],
+            type: 'date'
+          },
+          yaxis: {
+            range: ['0', '50'],
+            type: 'linear'
+          }
+        };
+
+        Plotly.newPlot('number-pill', numpill, layoutnum);
+
+        var data = [
+          {
+            x: ['2017-12-16', '2017-12-17', '2017-12-18', '2017-12-19', '2017-12-20', '2017-12-21'],
+            y: ['2017-12-01 06:24:00', '2017-12-01 06:30:00', '2017-12-01 07:01:00', '2017-12-01 06:48:00', '2017-12-01 07:04:00', '2017-12-01 06:26:00'],
+            type: 'scatter'
+          }
+        ];
+
+        var layout = {
+          title: 'Taking Pill Timeline',
+          xaxis: {
+            range: ['2017-12-15', '2017-12-22'],
+            type: 'date'
+          },
+          yaxis: {
+            tickformat: '%H:%M',
+            range: ['2017-12-01 23:59:59', '2017-12-01 00:00:00'],
+            type: 'date'
+          }
+        };
+
+        Plotly.newPlot('myDiv', data, layout);
+    }
+
+  </script>
+
+</body>
